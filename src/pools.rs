@@ -357,7 +357,10 @@ pub fn cpfp_tx(rpc: &Client, parent_txid: Txid) {
 
     let matching_utxo = unspent
         .into_iter()
-        .find(|utxo| utxo.amount >= Amount::from_sat(total_fee))
+        .find(|utxo| 
+            utxo.amount >= Amount::from_sat(total_fee) && 
+            utxo.txid != parent_txid  // Ensure we don't use the same transaction
+        )
         .unwrap();
 
     let op_return_script = Builder::new()
@@ -369,14 +372,6 @@ pub fn cpfp_tx(rpc: &Client, parent_txid: Txid) {
         version: transaction::Version(TX_VERSION),
         lock_time: absolute::LockTime::ZERO,
         input: vec![
-            TxIn {
-                previous_output: OutPoint {
-                    txid: parent_txid,
-                    vout: 1,
-                },
-                sequence: Sequence::ENABLE_RBF_NO_LOCKTIME,
-                ..Default::default()
-            },
             TxIn {
                 previous_output: OutPoint {
                     txid: matching_utxo.txid,
