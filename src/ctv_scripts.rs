@@ -15,15 +15,13 @@ use crate::{
     AMOUNT_PER_USER,
 };
 
-// OP_SECURETHEBAG is the original name (well there was another name before this but thats deep lore) for OP_CHECKTEMPLATEVERIFY.
-// OP_NOP4 is the spare opcode that will be used for op_ctv cos of softfork reasons
 // https://github.com/bitcoin/bips/blob/master/bip-0119.mediawiki
-const OP_SECURETHEBAG: Opcode = OP_NOP4;
+const OP_CTV: Opcode = OP_NOP4;
 
 pub fn ctv_script(ctv_hash: [u8; 32]) -> ScriptBuf {
     Builder::new()
         .push_slice(ctv_hash)
-        .push_opcode(OP_SECURETHEBAG)
+        .push_opcode(OP_CTV)
         .into_script()
 }
 
@@ -116,7 +114,7 @@ pub fn create_withdraw_ctv_hash(
         },
         #[cfg(feature = "regtest")]
         TxOut {
-            value: FEE_AMOUNT,
+            value: FEE_AMOUNT/2,
             script_pubkey: anchor_addr.script_pubkey(),
         },
     ];

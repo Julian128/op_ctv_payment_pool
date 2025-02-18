@@ -64,12 +64,13 @@ pub fn simulate_psbt_signing(
 
     let estimated_tx_size = (num_users * input_size) + (num_outputs * output_size) + fixed_overhead;
 
-    let fee_rate = rpc
-        .estimate_smart_fee(1, None)
-        .ok()
-        .and_then(|estimate| estimate.fee_rate.map(|rate| rate.to_sat()))
-        .unwrap_or(DEFAULT_FEE_RATE);
-    let total_fee = fee_rate * estimated_tx_size / 1000;
+    // let fee_rate = rpc
+    //     .estimate_smart_fee(1, None)
+    //     .ok()
+    //     .and_then(|estimate| estimate.fee_rate.map(|rate| rate.to_sat()))
+    //     .unwrap_or(DEFAULT_FEE_RATE);
+    let fee_rate = DEFAULT_FEE_RATE;
+    let total_fee = fee_rate * estimated_tx_size;
     let fee_per_user = total_fee / num_users;
 
     info!(

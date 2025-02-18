@@ -165,7 +165,7 @@ pub fn send_from_pool(
         },
         #[cfg(feature = "regtest")]
         TxOut {
-            value: FEE_AMOUNT,
+            value: FEE_AMOUNT/2,
             script_pubkey: anchor_addr.script_pubkey(),
         },
     ];
@@ -245,7 +245,7 @@ pub fn process_pool_spend(
             },
             #[cfg(feature = "regtest")]
             TxOut {
-                value: FEE_AMOUNT,
+                value: FEE_AMOUNT/2,
                 script_pubkey: anchor_addr.script_pubkey(),
             },
         ];
@@ -343,13 +343,15 @@ pub fn cpfp_tx(rpc: &Client, parent_txid: Txid) {
 
     let estimated_tx_size = (input_size) + (output_size) + fixed_overhead;
 
-    let fee_rate = rpc
-        .estimate_smart_fee(1, None)
-        .ok()
-        .and_then(|estimate| estimate.fee_rate.map(|rate| rate.to_sat()))
-        .unwrap_or(DEFAULT_FEE_RATE);
+    // let fee_rate = rpc
+    //     .estimate_smart_fee(1, None)
+    //     .ok()
+    //     .and_then(|estimate| estimate.fee_rate.map(|rate| rate.to_sat()))
+    //     .unwrap_or(DEFAULT_FEE_RATE);
 
-    let total_fee = fee_rate * estimated_tx_size / 1000;
+    let fee_rate = DEFAULT_FEE_RATE;
+
+    let total_fee = fee_rate * estimated_tx_size;
 
     let unspent = rpc.list_unspent(Some(1), None, None, None, None).unwrap();
 

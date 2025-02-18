@@ -11,13 +11,13 @@ use tracing::{error, info};
 //this could be 240 for P2A but we set for 1000 for now so it works on signet with hard coded fee
 pub const FEE_AMOUNT: Amount = Amount::from_sat(1000);
 pub const DUST_AMOUNT: Amount = Amount::from_sat(546);
-pub const DEFAULT_FEE_RATE: u64 = 5000;
+pub const DEFAULT_FEE_RATE: u64 = 5;
 
 //send a bit more so we can cover the fees for the pool funding transaction
 pub const INIT_WALLET_AMOUNT_FEE: Amount = Amount::from_sat(2000);
 
 //must be 3 or more. You can do maybe up to 20, but it will take a very long time to compute all taproot addresses
-pub const POOL_USERS: usize = 10;
+pub const POOL_USERS: usize = 6;
 
 //has to be more than FEE_AMOUNT + DUST_AMOUNT
 pub const AMOUNT_PER_USER: Amount = Amount::from_sat(11000);
@@ -26,7 +26,7 @@ pub const AMOUNT_PER_USER: Amount = Amount::from_sat(11000);
 pub const TX_VERSION: i32 = 2;
 
 #[cfg(feature = "regtest")]
-pub const TX_VERSION: i32 = 3;
+pub const TX_VERSION: i32 = 2;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
@@ -70,10 +70,18 @@ impl NetworkConfig {
     pub fn bitcoin_rpc(&self) -> Result<Client, Error> {
         let bitcoin_rpc_user = Self::get_env_var("BITCOIN_RPC_USER", "NA");
         let bitcoin_rpc_pass = Self::get_env_var("BITCOIN_RPC_PASS", "NA");
+        let bitcoin_rpc_host = Self::get_env_var("BITCOIN_RPC_HOST", "localhost");
         let bitcoin_rpc_cookie_path = Self::get_env_var("BITCOIN_RPC_COOKIE_PATH", "NA");
 
-        let bitcoin_rpc_url =
-            format!("http://localhost:{}/wallet/{}", self.port, self.wallet_name,);
+        // let bitcoin_rpc_url =
+            // format!("http://localhost:{}/wallet/{}", self.port, self.wallet_name,);
+
+        let bitcoin_rpc_url = format!(
+            "http://{}:{}/wallet/{}", 
+            bitcoin_rpc_host,
+            self.port,  // This is already set to "18443" for regtest
+            self.wallet_name
+        );
 
         info!("wallet name in use: {} \n", self.wallet_name);
 

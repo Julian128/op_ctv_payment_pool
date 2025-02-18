@@ -15,6 +15,22 @@ mod ctv_scripts;
 mod pools;
 mod rpc_helper;
 
+fn log_pool_state(
+    pool_index: usize,
+    remaining_users: usize,
+    total_funds: u64,
+    withdraw_addresses: &[Address],
+) {
+    info!("=== Pool State After Spend {} ===", pool_index);
+    info!("Remaining Users: {}", remaining_users);
+    info!("Total Funds in Pool: {} sats", total_funds);
+    info!("Remaining Addresses:");
+    for (idx, addr) in withdraw_addresses.iter().skip(pool_index + 1).enumerate() {
+        info!("  User {}: {}", idx + 1, addr);
+    }
+    info!("================================\n");
+}
+
 fn main() -> Result<()> {
     tracing_subscriber::fmt().with_target(false).init();
 
@@ -40,7 +56,11 @@ fn main() -> Result<()> {
 
     let anchor_addr = Address::from_str(config.fee_anchor_addr)?.require_network(config.network)?;
 
-    info!("Creating pool with {} users \n", POOL_USERS);
+    info!("=== Initial Pool State ===");
+    info!("Total Users: {}", POOL_USERS);
+    info!("Amount Per User: {} sats", AMOUNT_PER_USER);
+    info!("Total Pool Amount: {} sats", AMOUNT_PER_USER * POOL_USERS as u64);
+    info!("========================\n");
 
     let withdraw_addresses: Vec<Address> = (0..POOL_USERS)
         .map(|_| {
@@ -115,6 +135,18 @@ fn main() -> Result<()> {
 
     let mut current_txid = pool_funding_txid;
     for i in 0..=(POOL_USERS - 2) {
+        // Calculate remaining funds before spend
+        let remaining_users = POOL_USERS - i;
+        let total_funds = (AMOUNT_PER_USER * remaining_users as u64).to_sat();
+        
+        // Log pool state before spend
+        log_pool_state(i, remaining_users, total_funds, &withdraw_addresses);
+        
+        // Wait for user input before proceeding
+        info!("Press Enter to process the next spend...");
+        let mut buffer = String::new();
+        std::io::stdin().read_line(&mut buffer)?;
+
         current_txid = process_pool_spend(
             &pools,
             &config,
@@ -125,7 +157,19 @@ fn main() -> Result<()> {
             &anchor_addr,
             &mining_address,
         )?;
+
+        #[cfg(feature = "regtest")]
+        {
+            let _ = rpc.generate_to_address(1, &mining_address);
+            // Log confirmation
+            info!("Transaction confirmed in block. TXID: {}\n", current_txid);
+        }
     }
+
+    // Log final state
+    info!("=== Final Pool State ===");
+    info!("Pool empty. All users have withdrawn.");
+    info!("=====================\n");
 
     Ok(())
 }
